@@ -23,6 +23,7 @@ char* convertToString(WhereWasHit whereWasHit) {
         case RAMHit:
             return "RAM";
     }
+    return NULL;
 }
 
 Line* MMUSearchOnMemorys(Address add, Machine* machine, WhereWasHit* whereWasHit) {
@@ -66,12 +67,12 @@ Line* MMUSearchOnMemorys(Address add, Machine* machine, WhereWasHit* whereWasHit
         // Just works for Direct Mapping
         {
             Line tmp = cache1[l1pos];
-            cache1[l1pos] = cache2[l2pos];
-            int newL2pos = lineWhichWillLeave(tmp.tag, &machine->l2); /* Need to check the position of the block that will leave the L1 */
-            if (!canOnlyReplaceBlock(cache2[newL2pos])) { 
-                RAM[cache2[newL2pos].tag] = cache2[newL2pos].block;
+            cache1[l1pos] = cache3[l3pos];
+            int newL3pos = lineWhichWillLeave(tmp.tag, &machine->l3); /* Need to check the position of the block that will leave the L1 */
+            if (!canOnlyReplaceBlock(cache3[newL3pos])) { 
+                RAM[cache3[newL3pos].tag] = cache3[newL3pos].block;
             }
-            cache2[newL2pos] = tmp;
+            cache3[newL3pos] = tmp;
         }
     } else { 
         /* Block only in memory RAM, need to bring it to cache and manipulate the blocks */
@@ -86,7 +87,7 @@ Line* MMUSearchOnMemorys(Address add, Machine* machine, WhereWasHit* whereWasHit
         cache1[l1pos].block = RAM[add.block];
         cache1[l1pos].tag = add.block;
         cache1[l1pos].updated = false;
-        cost = COST_ACCESS_L1 + COST_ACCESS_L2 + COST_ACCESS_RAM;
+        cost = COST_ACCESS_L1 + COST_ACCESS_L2 + COST_ACCESS_L2 + COST_ACCESS_RAM;
         *whereWasHit = RAMHit;
     }
     updateMachineInfos(machine, whereWasHit, cost);
@@ -120,10 +121,18 @@ void updateMachineInfos(Machine* machine, WhereWasHit* whereWasHit, int cost) {
             machine->missL1 += 1;
             break;
         
+        case L3Hit:
+            machine->hitL3 += 1;
+            machine->missL2 += 1;
+            machine->missL1 += 1;
+            break;
+        
+        
         case RAMHit:
             machine->hitRAM += 1;
             machine->missL1 += 1;
             machine->missL2 += 1;
+            machine->missL3 += 1;
             break;
     }
     machine->totalCost += cost;
