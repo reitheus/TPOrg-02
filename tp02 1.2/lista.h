@@ -10,9 +10,10 @@ typedef struct celula{
 
 typedef struct lista{
     Celula *pCabeca, *pUltimo;
+    int tam;
 }Lista;
 
-void iniciaLista(Lista* ,int );
+Lista* iniciaLista(Lista* );
 int listaVazia(Lista* );
 void insereLista(Lista* ,Line );
 int retiraLista(Lista* ,Line* );
