@@ -1,5 +1,5 @@
 #include "mmu.h"
-
+#include "lista.h"
 #include <stdio.h>
 
 bool canOnlyReplaceBlock(Line);
@@ -247,7 +247,6 @@ Line* MMUSearchOnMemorysLfu(Address add, Machine* machine, WhereWasHit* whereWas
     return &(cache1[l1pos]);
 }
 
-<<<<<<< HEAD
 Line* MMUSearchOnMemorysLru(Address add, Machine* machine, WhereWasHit* whereWasHit) {
     // Strategy => write back
     
@@ -370,9 +369,6 @@ Line* MMUSearchOnMemorysLru(Address add, Machine* machine, WhereWasHit* whereWas
     updateMachineInfos(machine, whereWasHit, cost);
     return &(cache1[l1pos]);
 }
-=======
-
->>>>>>> 5d3a29707cee25eb144d23adc3209741f567f0b7
 
 bool canOnlyReplaceBlock(Line line) {
     // Or the block is empty or
