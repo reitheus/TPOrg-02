@@ -295,8 +295,8 @@ Line* MMUSearchOnMemorysLru(Address add, Machine* machine, WhereWasHit* whereWas
                     retiraLista(listaL1);
                     RAM[cache1[newL3pos].tag] = cache1[newL3pos].block;
                 }
-                insereLista(listaL2,tmp);
-                cache2[newl1pos] = tmp;
+                insereLista(listaL3,tmp);
+                cache3[newl1pos] = tmp;
             }
             retiraLista(listaL1);
             insereLista(listaL1,cache2[l2pos]);
@@ -381,14 +381,12 @@ bool canOnlyReplaceBlock(Line line) {
 bool canReplaceBlock(Cache *pCache,Line line) {
     for(int i = 0; i < pCache->size; i++){
 
-        if((pCache->lines->tag != line.tag) || pCache->lines->tag == INVALID_ADD || (line.tag != INVALID_ADD && !line.updated)){
+        if((pCache->lines[i].tag != line.tag) || pCache->lines[i].tag == INVALID_ADD || (line.tag != INVALID_ADD && !line.updated)){
 
             return true;
-        }else{
-            return false;
         }
     }
-    
+    return false;
 }
 
 int memoryCacheMapping(int address, Cache* cache) {
@@ -403,16 +401,8 @@ int memoryCacheMappingAssociative(int address, Cache* cache) {
 
             return i;//retorna o endereço do cache que contem o bloco que está sendo procurado
         }
-    }
-
-    for(int i = 0; i < cache->size; i++){//verifica todo cache até achar uma linha vazia
-
-        if(cache->lines[i].tag == INVALID_ADD){
-
-            return i;//retorna o endereço de alguma line vazia
-        }
     } 
-    return lineWhichWillLeaveLfu(cache) ;//retorna -1 se não econtrar
+    return -1;
 }
 
 int lineWhichWillLeaveLfu( Cache* cache){
