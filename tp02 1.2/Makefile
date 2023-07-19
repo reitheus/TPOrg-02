@@ -1,6 +1,6 @@
-all: main.o cpu.o generator.o instruction.o memory.o mmu.o
-	@gcc main.o cpu.o generator.o instruction.o memory.o mmu.o -o exe -lm
-	@rm -r main.o cpu.o generator.o instruction.o memory.o mmu.o
+all: main.o cpu.o generator.o instruction.o memory.o mmu.o lista.o
+	@gcc main.o cpu.o generator.o instruction.o memory.o mmu.o lista.o -o exe -lm
+	@rm -r main.o cpu.o generator.o instruction.o memory.o mmu.o lista.o
 main.o: main.c
 	@gcc main.c -c -Wall
 cpu.o: cpu.c
@@ -13,5 +13,7 @@ memory.o: memory.c
 	@gcc memory.c -c -Wall
 mmu.o: mmu.c
 	@gcc mmu.c -c -Wall
+lista.o: lista.c
+	@gcc pilha.c -c -Wall
 run:
 	@./exe
