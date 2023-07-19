@@ -26,7 +26,7 @@ void insereLista(Lista *pLista,Line x){
     }
 }
 
-/*int retiraLista(Lista *pLista,Line *x){
+int retiraLista(Lista *pLista){
     if(listaVazia(pLista))
         return 0;
     Celula *ant = pLista->pCabeca;
@@ -41,7 +41,7 @@ void insereLista(Lista *pLista,Line x){
     }
     free(ant);
     return 1;
-}*/
+}
 
 void trocaLista(Lista *pLista,Line *x){
     Celula *aux = pLista->pCabeca;
