@@ -1,5 +1,4 @@
 #include "mmu.h"
-#include "lista.h"
 
 #include <stdio.h>
 
@@ -7,7 +6,11 @@ bool canOnlyReplaceBlock(Line);
 
 int memoryCacheMapping(int, Cache*);
 
+int memoryCacheMappingAssociative(int address, Cache* cache); 
+
 int lineWhichWillLeave(int, Cache*);
+
+int lineWhichWillLeaveLfu( Cache* cache);
 
 void updateMachineInfos(Machine*, WhereWasHit*, int);
 
@@ -26,6 +29,7 @@ char* convertToString(WhereWasHit whereWasHit) {
     }
     return NULL;
 }
+
 
 Line* MMUSearchOnMemorys(Address add, Machine* machine, WhereWasHit* whereWasHit) {
     // Strategy => write back
@@ -103,10 +107,13 @@ Line* MMUSearchOnMemorys(Address add, Machine* machine, WhereWasHit* whereWasHit
     return &(cache1[l1pos]);
 }
 
+
 Line* MMUSearchOnMemorysLfu(Address add, Machine* machine, WhereWasHit* whereWasHit) {
     // Strategy => write back
     
     //  associative memory map -> Mapeamento por associação
+
+    
     int l1pos = memoryCacheMappingAssociative(add.block, &machine->l1);
     int l2pos = memoryCacheMappingAssociative(add.block, &machine->l2);
     int l3pos = memoryCacheMappingAssociative(add.block, &machine->l3);
@@ -129,42 +136,8 @@ Line* MMUSearchOnMemorysLfu(Address add, Machine* machine, WhereWasHit* whereWas
         *whereWasHit = L2Hit;
         // Just works for Direct Mapping
         {
-
-            l1pos = lineWhichWillLeaveLfu(&machine->l1);           
-            Line tmp1 = cache1[l1pos];
-
-            if (!canOnlyReplaceBlock(cache1[l1pos])) { //se nao puder colocar na 1 atualiza na cache2
-
-                int newL2pos = lineWhichWillLeaveLfu(&machine->l2);
-                Line tmp2 = cache2[newL2pos];
-
-                if (!canOnlyReplaceBlock(cache2[newL2pos])) { 
-
-                    int newL3pos = lineWhichWillLeaveLfu(&machine->l3);
-                    //Line tmp3 = cache3[newL3pos];      
-                    if (!canOnlyReplaceBlock(cache3[newL3pos])) {
-
-                        RAM[cache3[newL3pos].tag] = cache3[newL3pos].block;
-                    }
-                    cache3[newL3pos] = tmp2;
-                    cache3[newL3pos].cont = 0;
-                }
-                cache2[newL2pos] = tmp1;
-                cache2[newL2pos].cont = 0;
-            }
-            cache2[l2pos].cont++;
-            cache1[l1pos] = cache2[l2pos];
-            cache1[l1pos].cont = 0;
-        }
-    } else if (cache3[l3pos].tag == add.block) { 
-        /* Block is in memory cache L3 */
-        cache3[l3pos].tag = add.block;
-        cost = COST_ACCESS_L1 + COST_ACCESS_L2 + COST_ACCESS_L3;
-        *whereWasHit = L3Hit;
-        // Just works for Direct Mapping
-        {
-  
-            l1pos = lineWhichWillLeaveLfu(&machine->l1);
+           l1pos = lineWhichWillLeaveLfu(&machine->l1);
+            
             Line tmp1 = cache1[l1pos];
             
             if (!canOnlyReplaceBlock(cache1[l1pos])) { //se nao puder colocar na 1 atualiza na cache2
@@ -175,14 +148,64 @@ Line* MMUSearchOnMemorysLfu(Address add, Machine* machine, WhereWasHit* whereWas
                 if (!canOnlyReplaceBlock(cache2[newL2pos])) { 
 
                     int newL3pos = lineWhichWillLeaveLfu(&machine->l3);
-                    //Line tmp3 = cache3[newL3pos];   
+                    //Line tmp3 = cache3[newL3pos];
+                        
+                    if (!canOnlyReplaceBlock(cache3[newL3pos])) {
+
+                        RAM[cache3[newL3pos].tag] = cache3[newL3pos].block;
+
+                    }
+
+                    cache3[newL3pos] = tmp2;
+                    cache3[newL3pos].cont = 0;
+
+                }
+
+                cache2[newL2pos] = tmp1;
+                cache2[newL2pos].cont = 0;
+            }
+            cache2[l2pos].cont++;
+            
+            cache1[l1pos] = cache2[l2pos];
+            cache1[l1pos].cont = 0;
+
+             /* Need to check the position of the block that will leave the L1 */
+            // if (!canOnlyReplaceBlock(cache2[newL2pos])) { 
+            //     RAM[cache2[newL2pos].tag] = cache2[newL2pos].block;
+            // }
+            // cache2[newL2pos] = tmp;
+        }
+    } else if (cache3[l3pos].tag == add.block) { 
+        /* Block is in memory cache L3 */
+        cache3[l3pos].tag = add.block;
+        cost = COST_ACCESS_L1 + COST_ACCESS_L2 + COST_ACCESS_L3;
+        *whereWasHit = L3Hit;
+        // Just works for Direct Mapping
+        {
+  
+            l1pos = lineWhichWillLeaveLfu(&machine->l1);
+            
+            Line tmp1 = cache1[l1pos];
+            
+            if (!canOnlyReplaceBlock(cache1[l1pos])) { //se nao puder colocar na 1 atualiza na cache2
+
+                int newL2pos = lineWhichWillLeaveLfu(&machine->l2);
+                Line tmp2 = cache2[newL2pos];
+
+                if (!canOnlyReplaceBlock(cache2[newL2pos])) { 
+
+                    int newL3pos = lineWhichWillLeaveLfu(&machine->l3);
+                    //Line tmp3 = cache3[newL3pos];
+                        
                     if (!canOnlyReplaceBlock(cache3[newL3pos])) {
 
                         RAM[cache3[newL3pos].tag] = cache3[newL3pos].block;
                     }
+
                     cache3[newL3pos] = tmp2;
                     cache3[newL3pos].cont = 0;
                 }
+
                 cache2[newL2pos] = tmp1;
                 cache2[newL2pos].cont = 0;
             }
@@ -193,19 +216,20 @@ Line* MMUSearchOnMemorysLfu(Address add, Machine* machine, WhereWasHit* whereWas
     } else { 
         /* Block only in memory RAM, need to bring it to cache and manipulate the blocks */
         //int newL1pos = lineWhichWillLeaveLfu( &machine->l1);
-        int newL2pos = lineWhichWillLeaveLfu( &machine->l2); /* Need to check the position of the block that will leave the L1 */
-        int newL3pos = lineWhichWillLeaveLfu( &machine->l3);
+        int newL2pos = memoryCacheMappingAssociative(add.block, &machine->l2); /* Need to check the position of the block that will leave the L1 */
+        int newL3pos = memoryCacheMappingAssociative(add.block, &machine->l3); 
         
         if (!canOnlyReplaceBlock(cache1[l1pos])) { 
             /* The block on cache L1 cannot only be replaced, the memories must be updated */
             if (!canOnlyReplaceBlock(cache2[newL2pos])){ 
                 /* The block on cache L2 cannot only be replaced, the memories must be updated */
                 if (!canOnlyReplaceBlock(cache3[newL3pos])){ 
-                    /* The block on cache L2 cannot only be replaced, the memories must be updated */
+                    /* The block on cache L3 cannot only be replaced, the memories must be updated */
                     
                     RAM[cache3[newL3pos].tag] = cache3[newL3pos].block;
                 }
-                cache3[newL3pos] = cache2[l2pos];
+
+                cache3[newL3pos] = cache2[newL2pos];
                 cache3[newL3pos].cont = 0;
                 //RAM[cache2[newL2pos].tag] = cache2[newL2pos].block;
             }
@@ -223,6 +247,7 @@ Line* MMUSearchOnMemorysLfu(Address add, Machine* machine, WhereWasHit* whereWas
     return &(cache1[l1pos]);
 }
 
+<<<<<<< HEAD
 Line* MMUSearchOnMemorysLru(Address add, Machine* machine, WhereWasHit* whereWasHit) {
     // Strategy => write back
     
@@ -345,6 +370,9 @@ Line* MMUSearchOnMemorysLru(Address add, Machine* machine, WhereWasHit* whereWas
     updateMachineInfos(machine, whereWasHit, cost);
     return &(cache1[l1pos]);
 }
+=======
+
+>>>>>>> 5d3a29707cee25eb144d23adc3209741f567f0b7
 
 bool canOnlyReplaceBlock(Line line) {
     // Or the block is empty or
@@ -365,21 +393,40 @@ int memoryCacheMappingAssociative(int address, Cache* cache) {
         if(address == cache->lines[i].tag ){
 
             return i;//retorna o endereço do cache que contem o bloco que está sendo procurado
+
         }
+
     }
-    return -1 ;//retorna -1 se não econtrar
+
+    for(int i = 0; i < cache->size; i++){//verifica todo cache até achar uma linha vazia
+
+        if(cache->lines[i].tag == INVALID_ADD){
+
+            return i;//retorna o endereço de alguma line vazia
+
+        }
+
+    }
+    
+    
+    return lineWhichWillLeaveLfu(cache) ;//retorna -1 se não econtrar
 }
 
-int lineWhichWillLeaveLfu( Cache* cache) {
+
+int lineWhichWillLeaveLfu( Cache* cache){
     int cont = 999999;
     int indice;
     for(int i = 0; i < cache->size; i++){//verifica todo cache procurando o que menos deu hit
 
         if(cache->lines[i].cont < cont ){
-
+            //printf("\ntrue\n");
             indice = i;
+
         }
+
     }
+    
+    
     return indice ;//retorna o endereço do cache que menos deu hit
 
 }

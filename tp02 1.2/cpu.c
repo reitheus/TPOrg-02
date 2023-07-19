@@ -57,6 +57,7 @@ void executeInstruction(Machine* machine, int PC) {
             #endif
             
             line = MMUSearchOnMemorys(add2, machine, &hit); /* Searching block on memories */
+            // line = MMUSearchOnMemorysLfu(add2, machine, &hit);
             #ifdef PRINT_LOG
                 printf("BLOCK[%s.%d.%d](%4d)\n", convertToString(hit), add2.block, add2.word, line->block.words[add2.word]);
             #endif
@@ -66,18 +67,21 @@ void executeInstruction(Machine* machine, int PC) {
             break;
         case 1: // Sum
             line = MMUSearchOnMemorys(add1, machine, &hit); /* Searching block on memories */
+            // line = MMUSearchOnMemorysLfu(add1, machine, &hit);
             word1 = line->block.words[add1.word];
             #ifdef PRINT_LOG
                 printf("  > SUM BLOCK[%s.%d.%d](%4d)", convertToString(hit), add1.block, add1.word, line->block.words[add1.word]);
             #endif
 
             line = MMUSearchOnMemorys(add2, machine, &hit); /* Searching block on memories */
+            // line = MMUSearchOnMemorysLfu(add2, machine, &hit);
             word2 = line->block.words[add2.word];
             #ifdef PRINT_LOG
                 printf(" + BLOCK[%s.%d.%d](%4d)", convertToString(hit), add2.block, add2.word, line->block.words[add2.word]);
             #endif
 
             line = MMUSearchOnMemorys(add3, machine, &hit); /* Searching block on memories */
+            // line = MMUSearchOnMemorysLfu(add3, machine, &hit);
             #ifdef PRINT_LOG
                 printf(" > BLOCK[%s.%d.%d](%4d|", convertToString(hit), add3.block, add3.word, line->block.words[add3.word]);
             #endif
@@ -90,18 +94,23 @@ void executeInstruction(Machine* machine, int PC) {
             break;
         case 2: // Subtract
             line = MMUSearchOnMemorys(add1, machine, &hit); /* Searching block on memories */
+            // line = MMUSearchOnMemorysLfu(add1, machine, &hit); /* Searching block on memories */
+
             word1 = line->block.words[add1.word];
             #ifdef PRINT_LOG
                 printf("  > SUB BLOCK[%s.%d.%d](%4d)", convertToString(hit), add1.block, add1.word, line->block.words[add1.word]);
             #endif
 
             line = MMUSearchOnMemorys(add2, machine, &hit); /* Searching block on memories */
+            // line = MMUSearchOnMemorysLfu(add2, machine, &hit); /* Searching block on memories */
+ 
             word2 = line->block.words[add2.word];
             #ifdef PRINT_LOG
                 printf(" - BLOCK[%s.%d.%d](%4d)", convertToString(hit), add2.block, add2.word, line->block.words[add2.word]);
             #endif
 
             line = MMUSearchOnMemorys(add3, machine, &hit); /* Searching block on memories */
+            // line = MMUSearchOnMemorysLfu(add3, machine, &hit); /* Searching block on memories */
             #ifdef PRINT_LOG
                 printf(" > BLOCK[%s.%d.%d](%4d|", convertToString(hit), add3.block, add3.word, line->block.words[add3.word]);
             #endif
@@ -116,12 +125,14 @@ void executeInstruction(Machine* machine, int PC) {
             break;
         case 3: // Moving information in RAM
             line = MMUSearchOnMemorys(add1, machine, &hit); /* Searching block on memories */
+            // line = MMUSearchOnMemorysLfu(add1, machine, &hit); /* Searching block on memories */
             word1 = line->block.words[add1.word];
             #ifdef PRINT_LOG
                 printf("  > MOV BLOCK[%s.%d.%d](%4d) > ", convertToString(hit), add1.block, add1.word, line->block.words[add1.word]);
             #endif
             
             line = MMUSearchOnMemorys(add2, machine, &hit); /* Searching block on memories */
+            // line = MMUSearchOnMemorysLfu(add2, machine, &hit); /* Searching block on memories */
             #ifdef PRINT_LOG
                 printf("BLOCK[%s.%d.%d](%4d|", convertToString(hit), add2.block, add2.word, line->block.words[add2.word]);
             #endif
