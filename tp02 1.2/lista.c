@@ -1,18 +1,21 @@
 #include "lista.h"
 
-void iniciaLista(Lista *pLista){
+Lista* iniciaLista(Lista *pLista){
     pLista->pCabeca = NULL;
-    pLista->pUltimo = NULL;
+    pLista->pUltimo = pLista->pCabeca;
+    pLista->tam = 0;
+    return pLista;
 }
 
 int listaVazia(Lista *pLista){
-    return (pLista->pCabeca == NULL);
+    return (pLista->pCabeca == pLista->pUltimo);
 }
 
 void insereLista(Lista *pLista,Line x){
     Celula *aux = (Celula*)malloc(sizeof(Celula));
     aux->item = x;
     aux->prox = NULL;
+    pLista->tam++;
     if(listaVazia(pLista)){
         pLista->pCabeca = aux;
         pLista->pUltimo = aux;
@@ -25,10 +28,11 @@ void insereLista(Lista *pLista,Line x){
 int retiraLista(Lista *pLista,Line *x){
     if(listaVazia(pLista))
         return 0;
-    Celula *aux;
-    aux = pLista->pCabeca->prox;
-    *x = aux->item;
-    pLista->pCabeca->prox = aux->prox;
-    free(aux);
+    Celula *aux = pLista->pCabeca;
+    while(aux->prox != NULL){
+        pLista->pUltimo = aux;
+        aux = pLista->pUltimo->prox;
+    }
+
     return 1;
 }
