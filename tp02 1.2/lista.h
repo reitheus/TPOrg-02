@@ -16,6 +16,7 @@ typedef struct lista{
 Lista* iniciaLista(Lista* );
 int listaVazia(Lista* );
 void insereLista(Lista* ,Line );
-int retiraLista(Lista* ,Line* );
+//int retiraLista(Lista* ,Line* );
+void trocaLista(Lista* ,Line* );
 
 #endif//lista.h
