@@ -5,7 +5,7 @@
 
 typedef struct celula{
     Line item;
-    Celula *prox;
+    struct celula *prox;
 }Celula;
 
 typedef struct lista{
@@ -14,12 +14,12 @@ typedef struct lista{
 }Lista;
 
 
-Lista* iniciaLista(Lista* );
+void iniciaLista(Lista* );
 
 int listaVazia(Lista* );
 void insereLista(Lista* ,Line );
 int retiraLista(Lista* );
-
+void liberaLista(Lista* );
 //Busca pela linha e troca ela com a primeira posição
 void trocaLista(Lista* ,Line* );
 

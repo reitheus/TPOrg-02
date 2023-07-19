@@ -1,15 +1,21 @@
 #include "lista.h"
 
-Lista* iniciaLista(Lista *pLista){
+void iniciaLista(Lista *pLista){
     pLista->pCabeca = (Celula*)malloc(sizeof(Celula));
     pLista->pUltimo = pLista->pCabeca;
     pLista->pCabeca->prox = NULL;
     pLista->tam = 0;
-    return pLista;
 }
 
 int listaVazia(Lista *pLista){
     return (pLista->pCabeca == pLista->pUltimo);
+}
+
+void liberaLista(Lista *pLista){
+    while(!listaVazia(pLista)){
+        retiraLista(pLista);
+    }
+    free(pLista);
 }
 
 void insereLista(Lista *pLista,Line x){

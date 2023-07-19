@@ -267,9 +267,12 @@ Line* MMUSearchOnMemorysLru(Address add, Machine* machine, WhereWasHit* whereWas
     Line* cache2 = machine->l2.lines;
     Line* cache3 = machine->l3.lines;
     MemoryBlock* RAM = machine->ram.blocks;
-    Lista *listaL1 = iniciaLista(listaL1);
-    Lista *listaL2 = iniciaLista(listaL2);
-    Lista *listaL3 = iniciaLista(listaL3);
+    Lista *listaL1 = NULL;
+    iniciaLista(listaL1);
+    Lista *listaL2 = NULL;
+    iniciaLista(listaL2);
+    Lista *listaL3 = NULL;
+    iniciaLista(listaL3);
     int cost = 0;
 
     if (cache1[l1pos].tag == add.block) { //se o conteudo na memoria cache é igual a que está sendo procurada da hit
@@ -284,7 +287,7 @@ Line* MMUSearchOnMemorysLru(Address add, Machine* machine, WhereWasHit* whereWas
         *whereWasHit = L2Hit;
 
         {
-            if(!canReplaceBlock(cache1,cache2[l2pos])){//se não puder colocar na cache1
+            if(!canReplaceBlock(&machine->l1,cache2[l2pos])){//se não puder colocar na cache1
 
                 int newl1pos = lineWhichWillLeaveLru(listaL1,&machine->l1);//pos de quem está saindo da cache 1           
                 Line tmp = cache1[newl1pos];//armazena o valor de quem ta saindo da cache 1
@@ -292,9 +295,9 @@ Line* MMUSearchOnMemorysLru(Address add, Machine* machine, WhereWasHit* whereWas
                 cache1[newl1pos] = cache2[l2pos];
                 insereLista(listaL1,cache2[l2pos]);
 
-                if (!canReplaceBlock(cache2,tmp)){ //se nao puder colocar na 2 atualiza na cache 3
+                if (!canReplaceBlock(&machine->l2,tmp)){ //se nao puder colocar na 2 atualiza na cache 3
 
-                    if (!canReplaceBlock(cache3,tmp)){ //se não puder colocar na 3 atualiza na RAM
+                    if (!canReplaceBlock(&machine->l3,tmp)){ //se não puder colocar na 3 atualiza na RAM
 
                         RAM[cache1[newl1pos].tag] = cache1[newl1pos].block;
                         
@@ -316,7 +319,7 @@ Line* MMUSearchOnMemorysLru(Address add, Machine* machine, WhereWasHit* whereWas
         *whereWasHit = L3Hit;
         // Just works for Direct Mapping
         {
-            if(!canReplaceBlock(cache1,cache3[l3pos])){//se não puder colocar na cache 1
+            if(!canReplaceBlock(&machine->l1,cache3[l3pos])){//se não puder colocar na cache 1
 
                 int extl1pos = lineWhichWillLeaveLru(listaL1,&machine->l1);//pos de quem está saindo da cache 1           
                 Line tmp = cache1[extl1pos];//armazena o valor de quem ta saindo da cache 1
@@ -324,7 +327,7 @@ Line* MMUSearchOnMemorysLru(Address add, Machine* machine, WhereWasHit* whereWas
                 cache1[extl1pos] = cache3[l3pos];
                 insereLista(listaL1,cache3[l3pos]);
 
-                if (!canReplaceBlock(cache2,tmp)){ //se nao puder colocar na 2 atualiza na cache 3
+                if (!canReplaceBlock(&machine->l2,tmp)){ //se nao puder colocar na 2 atualiza na cache 3
 
                     int extl2pos = lineWhichWillLeaveLru(listaL2,&machine->l2);//pos de quem está saindo da cache 2          
                     Line tmp2 = cache2[extl2pos];//armazena o valor de quem ta saindo da cache 2
@@ -332,7 +335,7 @@ Line* MMUSearchOnMemorysLru(Address add, Machine* machine, WhereWasHit* whereWas
                     cache2[extl2pos] = tmp;
                     insereLista(listaL2,tmp);
 
-                    if (!canReplaceBlock(cache3,tmp)){ //se não puder colocar na 3 atualiza na RAM
+                    if (!canReplaceBlock(&machine->l3,tmp)){ //se não puder colocar na 3 atualiza na RAM
 
                         int extl3pos = lineWhichWillLeaveLru(listaL3,&machine->l3);//pos de quem está saindo da cache 2          
                         retiraLista(listaL2);
@@ -361,7 +364,7 @@ Line* MMUSearchOnMemorysLru(Address add, Machine* machine, WhereWasHit* whereWas
             retiraLista(listaL1);
             cache1[extl1pos].block = RAM[add.block];
             cache1[extl1pos].tag = add.block;
-            if (!canReplaceBlock(cache2,tmp)){ //se nao puder colocar na 2 atualiza na cache 3
+            if (!canReplaceBlock(&machine->l2,tmp)){ //se nao puder colocar na 2 atualiza na cache 3
 
                 int extl2pos = lineWhichWillLeaveLru(listaL2,&machine->l2);//pos de quem está saindo da cache 2          
                 Line tmp2 = cache2[extl2pos];//armazena o valor de quem ta saindo da cache 2
@@ -369,7 +372,7 @@ Line* MMUSearchOnMemorysLru(Address add, Machine* machine, WhereWasHit* whereWas
                 cache2[extl2pos] = tmp;
                 insereLista(listaL2,tmp);
 
-                if (!canReplaceBlock(cache3,tmp)){ //se não puder colocar na 3 atualiza na RAM
+                if (!canReplaceBlock(&machine->l3,tmp)){ //se não puder colocar na 3 atualiza na RAM
 
                     int extl3pos = lineWhichWillLeaveLru(listaL3,&machine->l3);//pos de quem está saindo da cache 2          
                     retiraLista(listaL2);
@@ -392,6 +395,7 @@ Line* MMUSearchOnMemorysLru(Address add, Machine* machine, WhereWasHit* whereWas
         cost = COST_ACCESS_L1 + COST_ACCESS_L2 + COST_ACCESS_L3 + COST_ACCESS_RAM;
         *whereWasHit = RAMHit;
     }
+    
     updateMachineInfos(machine, whereWasHit, cost);
     return &(cache1[l1pos]);
 }
@@ -447,12 +451,12 @@ int lineWhichWillLeaveLfu( Cache* cache){
 int lineWhichWillLeaveLru(Lista *pLista, Cache *pCache){
 
     Celula *aux = pLista->pCabeca;
-    Line *sai;
+    Line *sai = NULL;
     int index;
 
     while (aux->prox != NULL){
         if (aux->prox == NULL){
-            sai = aux->prox;
+            *sai = aux->prox->item;
         }
         aux = aux->prox;
     }
