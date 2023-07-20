@@ -1,10 +1,10 @@
-all: main.o cpu.o generator.o instruction.o memory.o mmu.o lista.o
-	@gcc main.o cpu.o generator.o instruction.o memory.o mmu.o lista.o -o exe -lm
-	@rm -r main.o cpu.o generator.o instruction.o memory.o mmu.o lista.o
-main.o: main.c
-	@gcc main.c -c -Wall
-cpu.o: cpu.c
-	@gcc cpu.c -c -Wall
+all: mainlru.o cpulru.o generator.o instruction.o memory.o mmu.o lista.o
+	@gcc mainlru.o cpulru.o generator.o instruction.o memory.o mmu.o lista.o -o exe -lm
+	@rm -r mainlru.o cpulru.o generator.o instruction.o memory.o mmu.o lista.o
+mainlru.o: mainlru.c
+	@gcc mainlru.c -c -Wall
+cpulru.o: cpulru.c
+	@gcc cpulru.c -c -Wall
 generator.o: generator.c
 	@gcc generator.c -c -Wall
 instruction.o: instruction.c
@@ -14,6 +14,6 @@ memory.o: memory.c
 mmu.o: mmu.c
 	@gcc mmu.c -c -Wall
 lista.o: lista.c
-	@gcc pilha.c -c -Wall
+	@gcc lista.c -c -Wall
 run:
 	@./exe

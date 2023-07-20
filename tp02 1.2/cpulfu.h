@@ -1,5 +1,5 @@
-#ifndef CPU_H
-#define CPU_H
+#ifndef CPULFU_H
+#define CPULFU_H
 
 #include "instruction.h"
 #include "memory.h"

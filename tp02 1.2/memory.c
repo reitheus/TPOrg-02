@@ -1,5 +1,6 @@
 #include "memory.h"
 
+
 void startRAM(RAM* ram, int size) {
     ram->blocks = (MemoryBlock*) malloc(sizeof(MemoryBlock) * size);
     ram->size = size;

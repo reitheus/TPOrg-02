@@ -13,14 +13,13 @@ typedef struct lista{
     Celula* pUltimo;
 }Lista;
 
-
 void iniciaLista(Lista* );
-
 int listaVazia(Lista* );
 void insereLista(Lista* ,Line );
-int retiraLista(Lista* );
+void retiraLista(Lista* );
 void liberaLista(Lista* );
+
 //Busca pela linha e troca ela com a primeira posição
-void trocaLista(Lista* ,Line* );
+void trocaLista(Lista* ,int );
 
 #endif//lista.h

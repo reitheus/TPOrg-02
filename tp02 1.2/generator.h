@@ -1,7 +1,7 @@
 #ifndef GENERATOR_H
 #define GENERATOR_H
 
-#include "cpu.h"
+#include "cpulru.h"
 
 Instruction* generateRandomInstructions(int);
 Instruction* readInstructions(char*, int*);

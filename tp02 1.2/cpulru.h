@@ -1,5 +1,5 @@
-#ifndef CPU_H
-#define CPU_H
+#ifndef CPULRU_H
+#define CPULRU_H
 
 #include "instruction.h"
 #include "memory.h"
@@ -11,6 +11,9 @@ typedef struct {
     Cache l1; // cache L1
     Cache l2; // cache L2
     Cache l3; // cache L3
+    Lista listal1;
+    Lista listal2;
+    Lista listal3;
     int hitL1, hitL2,hitL3, hitRAM;
     int missL1, missL2, missL3;
     int totalCost;

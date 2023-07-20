@@ -3,7 +3,7 @@
 
 #include "memory.h"
 #include "instruction.h"
-#include "cpu.h"
+#include "cpulru.h"
 
 typedef enum {
     L1Hit = 1,

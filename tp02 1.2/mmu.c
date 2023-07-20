@@ -2,24 +2,22 @@
 #include "lista.h"
 #include <stdio.h>
 
-
+//verifica se pode trocar na cache
 bool canOnlyReplaceBlock(Line);
 
-//verifica se pode trocar na cache
-bool canReplaceBlock(Cache*,Line);
 
 int memoryCacheMapping(int, Cache*);
 
 //verifica todo cache até achar a liha que contem o bloco da ram ou uma linha vazia, retorna -1 se não achar
-int memoryCacheMappingAssociative(int address, Cache* cache); 
+int memoryCacheMappingAssociative(int, Cache*); 
 
 int lineWhichWillLeave(int, Cache*);
 
 //verifica quem vai sair da cache e retorna um inteiro de pos
-int lineWhichWillLeaveLfu( Cache* cache);
+int lineWhichWillLeaveLfu( Cache*);
 
-//verifica quem vai sair da cache e retorna um inteiro de pos
-int lineWhichWillLeaveLru(Lista *pLista, Cache* cache);
+//verifica quem vai sair da cache e retorna um ponteiro
+int lineWhichWillLeaveLru(Lista* , Cache* );
 
 void updateMachineInfos(Machine*, WhereWasHit*, int);
 
@@ -175,12 +173,6 @@ Line* MMUSearchOnMemorysLfu(Address add, Machine* machine, WhereWasHit* whereWas
             
             cache1[l1pos] = cache2[l2pos];
             cache1[l1pos].cont = 0;
-
-             /* Need to check the position of the block that will leave the L1 */
-            // if (!canOnlyReplaceBlock(cache2[newL2pos])) { 
-            //     RAM[cache2[newL2pos].tag] = cache2[newL2pos].block;
-            // }
-            // cache2[newL2pos] = tmp;
         }
     } else if (cache3[l3pos].tag == add.block) { 
         /* Block is in memory cache L3 */
@@ -258,7 +250,7 @@ Line* MMUSearchOnMemorysLru(Address add, Machine* machine, WhereWasHit* whereWas
     // Strategy => write back
     
     //associative memory map -> Mapeamento por associação
-
+ 
     int l1pos = memoryCacheMappingAssociative(add.block, &machine->l1);
     int l2pos = memoryCacheMappingAssociative(add.block, &machine->l2);
     int l3pos = memoryCacheMappingAssociative(add.block, &machine->l3);
@@ -267,17 +259,11 @@ Line* MMUSearchOnMemorysLru(Address add, Machine* machine, WhereWasHit* whereWas
     Line* cache2 = machine->l2.lines;
     Line* cache3 = machine->l3.lines;
     MemoryBlock* RAM = machine->ram.blocks;
-    Lista *listaL1 = (Lista*)malloc(sizeof(Lista));
-    Lista *listaL2 = (Lista*)malloc(sizeof(Lista));
-    Lista *listaL3 = (Lista*)malloc(sizeof(Lista));
-    iniciaLista(listaL1);
-    iniciaLista(listaL2);
-    iniciaLista(listaL3);
     int cost = 0;
 
     if (cache1[l1pos].tag == add.block) { //se o conteudo na memoria cache é igual a que está sendo procurada da hit
         /* bloco está na cache1 */
-        trocaLista(listaL1,&cache1[l1pos]);
+        trocaLista(&machine->listal1,cache1[l1pos].tag);
         cost = COST_ACCESS_L1;
         *whereWasHit = L1Hit;
     } else if (cache2[l2pos].tag == add.block) { 
@@ -287,31 +273,41 @@ Line* MMUSearchOnMemorysLru(Address add, Machine* machine, WhereWasHit* whereWas
         *whereWasHit = L2Hit;
 
         {
-            if(!canReplaceBlock(&machine->l1,cache2[l2pos])){//se não puder colocar na cache1
+            
 
-                int newl1pos = lineWhichWillLeaveLru(listaL1,&machine->l1);//pos de quem está saindo da cache 1           
-                Line tmp = cache1[newl1pos];//armazena o valor de quem ta saindo da cache 1
-                retiraLista(listaL1);
-                cache1[newl1pos] = cache2[l2pos];
-                insereLista(listaL1,cache2[l2pos]);
+            Line tmp = cache1[l1pos];//armazena o valor de quem ta saindo da cache 1
+            l1pos = lineWhichWillLeaveLru(&machine->listal1,&machine->l1);//pos de quem está saindo da cache 1           
+            retiraLista(&machine->listal1);
+            
+            if (!canOnlyReplaceBlock(tmp)){ //se nao puder colocar na 2 atualiza na cache 3
+                    
+                int extl2pos = lineWhichWillLeaveLru(&machine->listal2,&machine->l2);//pos de quem está saindo da cache 2          
+                Line tmp2 = cache2[extl2pos];//armazena o valor de quem ta saindo da cache 2
+                retiraLista(&machine->listal2);
+                
+                
+                if (!canOnlyReplaceBlock(tmp2)){ //se não puder colocar na 3 atualiza na RAM
 
-                if (!canReplaceBlock(&machine->l2,tmp)){ //se nao puder colocar na 2 atualiza na cache 3
+                    int extl3pos = lineWhichWillLeaveLru(&machine->listal3,&machine->l3);
+                    retiraLista(&machine->listal3);
+                    
 
-                    if (!canReplaceBlock(&machine->l3,tmp)){ //se não puder colocar na 3 atualiza na RAM
+                    if (!canOnlyReplaceBlock(cache3[extl3pos])){
 
-                        RAM[cache1[newl1pos].tag] = cache1[newl1pos].block;
-                        
+                        RAM[cache3[extl3pos].tag] = cache1[extl3pos].block;
                     }
-                    insereLista(listaL3,tmp);
-                    cache3[newl1pos] = tmp;
+                    insereLista(&machine->listal3,tmp2);
+                    cache3[extl3pos] = tmp2;
                 }
-                insereLista(listaL2,tmp);
-                cache2[l2pos] = tmp;
+                insereLista(&machine->listal2,tmp);
+                cache2[extl2pos] = tmp;
             }
-            insereLista(listaL1,cache2[l2pos]);
+            insereLista(&machine->listal1,cache2[l2pos]);
             cache1[l1pos] = cache2[l2pos];
-
         }
+
+
+        
     } else if (cache3[l3pos].tag == add.block) { 
         /* Block is in memory cache L3 */
         cache3[l3pos].tag = add.block;
@@ -319,85 +315,71 @@ Line* MMUSearchOnMemorysLru(Address add, Machine* machine, WhereWasHit* whereWas
         *whereWasHit = L3Hit;
         // Just works for Direct Mapping
         {
-            if(!canReplaceBlock(&machine->l1,cache3[l3pos])){//se não puder colocar na cache 1
 
-                int extl1pos = lineWhichWillLeaveLru(listaL1,&machine->l1);//pos de quem está saindo da cache 1           
-                Line tmp = cache1[extl1pos];//armazena o valor de quem ta saindo da cache 1
-                retiraLista(listaL1);
-                cache1[extl1pos] = cache3[l3pos];
-                insereLista(listaL1,cache3[l3pos]);
 
-                if (!canReplaceBlock(&machine->l2,tmp)){ //se nao puder colocar na 2 atualiza na cache 3
+            Line tmp = cache1[l1pos];//armazena o valor de quem ta saindo da cache 1
+            l1pos = lineWhichWillLeaveLru(&machine->listal1,&machine->l1);//pos de quem está saindo da cache 1           
+            retiraLista(&machine->listal1);
+            
 
-                    int extl2pos = lineWhichWillLeaveLru(listaL2,&machine->l2);//pos de quem está saindo da cache 2          
-                    Line tmp2 = cache2[extl2pos];//armazena o valor de quem ta saindo da cache 2
-                    retiraLista(listaL2);
-                    cache2[extl2pos] = tmp;
-                    insereLista(listaL2,tmp);
+            if (!canOnlyReplaceBlock(cache1[l1pos])){ //se nao puder colocar na 2 atualiza na cache 3
+                    
+                int extl2pos = lineWhichWillLeaveLru(&machine->listal2,&machine->l2);//pos de quem está saindo da cache 2          
+                Line tmp2 = cache2[extl2pos];//armazena o valor de quem ta saindo da cache 2
+                retiraLista(&machine->listal2);
+                
+                
+                if (!canOnlyReplaceBlock(cache2[extl2pos])){ //se não puder colocar na 3 atualiza na RAM
 
-                    if (!canReplaceBlock(&machine->l3,tmp)){ //se não puder colocar na 3 atualiza na RAM
+                    int extl3pos = lineWhichWillLeaveLru(&machine->listal3,&machine->l3);
+                    retiraLista(&machine->listal3);
+                                        
 
-                        int extl3pos = lineWhichWillLeaveLru(listaL3,&machine->l3);//pos de quem está saindo da cache 2          
-                        retiraLista(listaL2);
-                        cache3[extl3pos] = tmp2;
-                        insereLista(listaL3,tmp2);
+                    if (!canOnlyReplaceBlock(cache3[extl3pos])){
 
-                        RAM[cache3[extl3pos].tag] = cache3[extl3pos].block;
-                        
+                        RAM[cache3[extl3pos].tag] = cache1[extl3pos].block;
                     }
-                    insereLista(listaL3,tmp2);
-                    cache3[l3pos] = tmp2;
+                    insereLista(&machine->listal3,tmp2);
+                    cache3[extl3pos] = tmp2;
                 }
-                insereLista(listaL2,tmp);
-                cache2[l2pos] = tmp;
+                insereLista(&machine->listal2,tmp);
+                cache2[extl2pos] = tmp;
+                
             }
-            insereLista(listaL1,cache3[l3pos]);
-            cache1[l1pos] = cache3[l3pos];
+            insereLista(&machine->listal1,cache3[l3pos]);
+            cache1[l1pos] = cache3[l3pos];            
 
         }
     } else { 
         /* Block only in memory RAM, need to bring it to cache and manipulate the blocks */
-        
-        if (!canReplaceBlock(&machine->l1,cache1[l1pos])) { 
-            int extl1pos = lineWhichWillLeaveLru(listaL1,&machine->l1);
-            Line tmp = cache1[extl1pos];
-            retiraLista(listaL1);
-            cache1[extl1pos].block = RAM[add.block];
-            cache1[extl1pos].tag = add.block;
-            if (!canReplaceBlock(&machine->l2,tmp)){ //se nao puder colocar na 2 atualiza na cache 3
+        int newl2pos = memoryCacheMappingAssociative(add.block,&machine->l2);
+        int newl3pos = memoryCacheMappingAssociative(add.block,&machine->l3);
 
-                int extl2pos = lineWhichWillLeaveLru(listaL2,&machine->l2);//pos de quem está saindo da cache 2          
-                Line tmp2 = cache2[extl2pos];//armazena o valor de quem ta saindo da cache 2
-                retiraLista(listaL2);
-                cache2[extl2pos] = tmp;
-                insereLista(listaL2,tmp);
+        if (!canOnlyReplaceBlock(cache1[l1pos])){//verifica se a cache está cheia             
 
-                if (!canReplaceBlock(&machine->l3,tmp)){ //se não puder colocar na 3 atualiza na RAM
+            if (!canOnlyReplaceBlock(cache2[newl2pos])){//se não puder colocar na 2 joga para 3              
 
-                    int extl3pos = lineWhichWillLeaveLru(listaL3,&machine->l3);//pos de quem está saindo da cache 2          
-                    retiraLista(listaL2);
-                    cache3[extl3pos] = tmp2;
-                    insereLista(listaL3,tmp2);
+                if (!canOnlyReplaceBlock(cache3[newl3pos])){
 
-                    RAM[cache3[extl3pos].tag] = cache3[extl3pos].block;
-                    
+                    RAM[cache3[newl3pos].tag] = cache3[newl3pos].block;
                 }
-                insereLista(listaL3,tmp2);
-                cache3[l3pos] = tmp2;
+                cache3[newl3pos] = cache2[newl2pos];
+                insereLista(&machine->listal3,cache3[l3pos]);
+                
             }
-            insereLista(listaL2,tmp);
-            cache2[l2pos] = tmp;
+            cache2[newl2pos] = cache1[l1pos];
+            insereLista(&machine->listal2,cache2[l2pos]);
         }
         cache1[l1pos].block = RAM[add.block];
         cache1[l1pos].tag = add.block;
-        insereLista(listaL1,cache1[l1pos]);
+        insereLista(&machine->listal1, cache1[l1pos]);
         cache1[l1pos].updated = false;
         cost = COST_ACCESS_L1 + COST_ACCESS_L2 + COST_ACCESS_L3 + COST_ACCESS_RAM;
         *whereWasHit = RAMHit;
+        
+        
+
     }
-    free(listaL1);
-    free(listaL2);
-    free(listaL3);
     updateMachineInfos(machine, whereWasHit, cost);
     return &(cache1[l1pos]);
 }
@@ -405,19 +387,10 @@ Line* MMUSearchOnMemorysLru(Address add, Machine* machine, WhereWasHit* whereWas
 bool canOnlyReplaceBlock(Line line) {
     // Or the block is empty or
     // the block is equal to the one in memory RAM and can be replaced
-    if (line.tag == INVALID_ADD || (line.tag != INVALID_ADD && !line.updated))
+    if (line.tag == INVALID_ADD || (line.tag != INVALID_ADD && !line.updated)){
+        
         return true;
-    return false;
-}
-
-bool canReplaceBlock(Cache *pCache,Line line) {
-    for(int i = 0; i < pCache->size; i++){
-
-        if((pCache->lines[i].tag != line.tag) || pCache->lines[i].tag == INVALID_ADD || (line.tag != INVALID_ADD && !line.updated)){
-
-            return true;
-        }
-    }
+    } 
     return false;
 }
 
@@ -426,20 +399,20 @@ int memoryCacheMapping(int address, Cache* cache) {
 }
 
 int memoryCacheMappingAssociative(int address, Cache* cache) {
-    
-    for(int i = 0; i < cache->size; i++){//verifica todo cache até achar a liha que contem o bloco da ram ou uma linha vazia
+    int index = -1;
+    for(int i = 0; i < cache->size; i++){//verifica todo cache até achar a liha que contem o bloco da ram
 
-        if(address == cache->lines[i].tag || cache->lines[i].tag == INVALID_ADD){
-
-            return i;//retorna o endereço do cache que contem o bloco que está sendo procurado
+        if(cache->lines[i].tag == address || cache->lines[i].tag == INVALID_ADD){
+            index = i;
+            return index;
         }
     } 
-    return -1;
+    return index;
 }
 
 int lineWhichWillLeaveLfu( Cache* cache){
     int cont = 999999;
-    int indice;
+    int indice = -1;
     for(int i = 0; i < cache->size; i++){//verifica todo cache procurando o que menos deu hit
 
         if(cache->lines[i].cont < cont ){
@@ -450,26 +423,22 @@ int lineWhichWillLeaveLfu( Cache* cache){
     return indice ;//retorna o endereço do cache que menos deu hit
 }
 
-int lineWhichWillLeaveLru(Lista *pLista, Cache *pCache){
+int lineWhichWillLeaveLru(Lista *pLista, Cache *pCache) {
 
     Celula *aux = pLista->pCabeca;
-    Line *sai = NULL;
-    int index;
-
-    while (aux->prox != NULL){
-        if (aux->prox == NULL){
-            *sai = aux->prox->item;
-        }
+    while (aux->prox != NULL) {
         aux = aux->prox;
     }
-    free(aux);
-
-    for (int i = 0; i < pCache->size; i++){
-        if(pCache->lines[i].tag == sai->tag){
-            index = i;
+    int indice;
+    for (int i = 0; i < pCache->size; i++)
+    {
+        if (pCache->lines[i].tag == aux->item.tag)
+        {
+            indice = i;
         }
+        
     }
-    return index;
+    return indice;
 }
 
 int lineWhichWillLeave(int address, Cache* cache) {
