@@ -9,8 +9,8 @@ typedef struct celula{
 }Celula;
 
 typedef struct lista{
-    Celula *pCabeca, *pUltimo;
-    int tam;
+    Celula* pCabeca;
+    Celula* pUltimo;
 }Lista;
 
 

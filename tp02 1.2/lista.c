@@ -4,25 +4,17 @@ void iniciaLista(Lista *pLista){
     pLista->pCabeca = (Celula*)malloc(sizeof(Celula));
     pLista->pUltimo = pLista->pCabeca;
     pLista->pCabeca->prox = NULL;
-    pLista->tam = 0;
+    
 }
 
 int listaVazia(Lista *pLista){
     return (pLista->pCabeca == pLista->pUltimo);
 }
 
-void liberaLista(Lista *pLista){
-    while(!listaVazia(pLista)){
-        retiraLista(pLista);
-    }
-    free(pLista);
-}
-
 void insereLista(Lista *pLista,Line x){
     Celula *aux = (Celula*)malloc(sizeof(Celula));
     aux->item = x;
     aux->prox = NULL;
-    pLista->tam++;
     if(listaVazia(pLista)){
         pLista->pCabeca = aux;
         pLista->pUltimo = aux;
@@ -33,19 +25,17 @@ void insereLista(Lista *pLista,Line x){
 }
 
 int retiraLista(Lista *pLista){
-    if(listaVazia(pLista))
+    if(listaVazia(pLista)){
         return 0;
-    Celula *ant = pLista->pCabeca;
-    while(ant->prox != NULL){
-        if(ant->prox == NULL){
-            pLista->pUltimo = ant;
-            ant = pLista->pUltimo->prox;
-            pLista->pUltimo->prox = NULL;
-
-        }
-        ant = ant->prox;
     }
-    free(ant);
+    Celula *aux = pLista->pCabeca;
+    while(aux->prox != NULL){        
+        aux = aux->prox;
+    }
+    pLista->pUltimo = aux;
+    aux = pLista->pUltimo->prox;
+    pLista->pUltimo->prox = NULL;
+    free(aux);
     return 1;
 }
 

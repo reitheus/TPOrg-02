@@ -267,11 +267,11 @@ Line* MMUSearchOnMemorysLru(Address add, Machine* machine, WhereWasHit* whereWas
     Line* cache2 = machine->l2.lines;
     Line* cache3 = machine->l3.lines;
     MemoryBlock* RAM = machine->ram.blocks;
-    Lista *listaL1 = NULL;
+    Lista *listaL1 = (Lista*)malloc(sizeof(Lista));
+    Lista *listaL2 = (Lista*)malloc(sizeof(Lista));
+    Lista *listaL3 = (Lista*)malloc(sizeof(Lista));
     iniciaLista(listaL1);
-    Lista *listaL2 = NULL;
     iniciaLista(listaL2);
-    Lista *listaL3 = NULL;
     iniciaLista(listaL3);
     int cost = 0;
 
@@ -345,7 +345,7 @@ Line* MMUSearchOnMemorysLru(Address add, Machine* machine, WhereWasHit* whereWas
                         RAM[cache3[extl3pos].tag] = cache3[extl3pos].block;
                         
                     }
-                    iniciaLista(listaL3);
+                    insereLista(listaL3,tmp2);
                     cache3[l3pos] = tmp2;
                 }
                 insereLista(listaL2,tmp);
@@ -382,7 +382,7 @@ Line* MMUSearchOnMemorysLru(Address add, Machine* machine, WhereWasHit* whereWas
                     RAM[cache3[extl3pos].tag] = cache3[extl3pos].block;
                     
                 }
-                iniciaLista(listaL3);
+                insereLista(listaL3,tmp2);
                 cache3[l3pos] = tmp2;
             }
             insereLista(listaL2,tmp);
@@ -395,7 +395,9 @@ Line* MMUSearchOnMemorysLru(Address add, Machine* machine, WhereWasHit* whereWas
         cost = COST_ACCESS_L1 + COST_ACCESS_L2 + COST_ACCESS_L3 + COST_ACCESS_RAM;
         *whereWasHit = RAMHit;
     }
-    
+    free(listaL1);
+    free(listaL2);
+    free(listaL3);
     updateMachineInfos(machine, whereWasHit, cost);
     return &(cache1[l1pos]);
 }

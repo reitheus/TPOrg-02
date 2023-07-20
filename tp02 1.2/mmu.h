@@ -18,4 +18,6 @@ Line* MMUSearchOnMemorys(Address, Machine*, WhereWasHit*);
 
 Line* MMUSearchOnMemorysLfu(Address add, Machine* machine, WhereWasHit* whereWasHit);
 
+Line* MMUSearchOnMemorysLru(Address add, Machine* machine, WhereWasHit* whereWasHit);
+
 #endif // !MMU_H
